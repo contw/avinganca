@@ -53,20 +53,28 @@ const player = new Fighter({
             imageSrc: './img/carmilla/Attack.png',
             framesMax: 6
         },
-        attackBox: {
-            offset: {
-                x: 0,
-                y: 0
-            },
-            width: 100,
-            height: 50
+        hurt: {
+            imageSrc: './img/carmilla/Hurt.png',
+            framesMax: 2
+        },
+        death: {
+            imageSrc: './img/carmilla/Dead.png',
+            framesMax: 8
         }
+    },
+    attackBox: {
+        offset: {
+            x: 50,
+            y: 40
+        },
+        width: 50,
+        height: 30
     }
 })
 
 const enemy = new Fighter({
     position: {
-        x: 400,
+        x: 920,
         y: 100
     },
     velocity: {
@@ -102,15 +110,24 @@ const enemy = new Fighter({
             imageSrc: './img/dracula/Attack.png',
             framesMax: 5
         },
-        attackBox: {
-            offset: {
-                x: 0,
-                y: 0
-            },
-            width: 100,
-            height: 50
+        hurt: {
+            imageSrc: './img/dracula/Hurt.png',
+            framesMax: 1
+        },
+        death: {
+            imageSrc: './img/dracula/Dead.png',
+            framesMax: 8
         }
-}})
+    },
+    attackBox: {
+        offset: {
+            x: -40,
+            y: 40
+        },
+        width: 70,
+        height: 30
+    }
+})
 
 console.log(player)
 
@@ -174,17 +191,27 @@ function animate() {
         enemy.switchSprite('jump')
     }
 
-    // detect collision 
-    if (rectangularCollision({rectangle1: player, rectangle2: enemy}) && player.isAttacking) {
+    // detect collision & char hit
+    if (rectangularCollision({rectangle1: player, rectangle2: enemy}) && player.isAttacking && player.framesCurrent === 3) {
+            enemy.hurt()
             player.isAttacking = false
-            enemy.health -= 20
             document.querySelector('#enemyHealth').style.width = enemy.health + '%'
     }
 
-    if (rectangularCollision({rectangle1: enemy, rectangle2: player}) && enemy.isAttacking) {
+    if (rectangularCollision({rectangle1: enemy, rectangle2: player}) && enemy.isAttacking && enemy.framesCurrent === 3) {
+        player.hurt()
         enemy.isAttacking = false
-        player.health -= 20
         document.querySelector('#playerHealth').style.width = player.health + '%'
+    }
+
+    // character misses
+
+    if (player.isAttacking && player.framesCurrent === 3) {
+        player.isAttacking = false
+    }
+
+    if (enemy.isAttacking && enemy.framesCurrent === 3) {
+        enemy.isAttacking = false
     }
 
     // end game based on health
@@ -196,6 +223,7 @@ function animate() {
 animate()
 
 window.addEventListener('keydown', (event) => {
+    if(!player.dead){
     switch (event.key) {
         case 'd':
             keys.d.pressed = true
@@ -211,7 +239,11 @@ window.addEventListener('keydown', (event) => {
         case ' ':
             player.attack()
         break
+    }
+    }
 
+    if(!enemy.dead){
+    switch (event.key) {
         case 'ArrowRight':
             keys.ArrowRight.pressed = true
             enemy.lastKey = 'ArrowRight'
@@ -225,6 +257,7 @@ window.addEventListener('keydown', (event) => {
         break
         case 'ArrowDown':
             enemy.attack()
+    }
     }
 })
 
