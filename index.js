@@ -7,60 +7,16 @@ canvas.height = 576
 c.fillRect(0, 0, canvas.width, canvas.height)
 
 const gravity = 0.4
-class Sprite {
-    constructor({position, velocity, color = 'red', offset}) {
-        this.position = position
-        this.velocity = velocity
-        this.width = 50
-        this.height = 150
-        this.lastKey
-        this.attackBox = {
-            position: {
-                x: this.position.x,
-                y: this.position.y
-            },
-            offset,
-            width: 100,
-            height: 50
-        }
-        this.color = color
-        this.isAttacking
-        this.health = 100
-    }
 
-    draw() {
-        c.fillStyle = this.color
-        c.fillRect(this.position.x, this.position.y, this.width, this.height)
+const background = new Sprite({
+    position: {
+        x: 0,
+        y:0
+    },
+    imageSrc: './img/fundo.png'
+})
 
-        // attack box
-        if (this.isAttacking) {
-            c.fillStyle = 'green'
-            c.fillRect(this.attackBox.position.x, this.attackBox.position.y, this.attackBox.width, this.attackBox.height)
-        }
-    }
-
-    update() {
-        this.draw()
-        this.attackBox.position.x = this.position.x + this.attackBox.offset.x
-        this.attackBox.position.y = this.position.y
-
-        this.position.x += this.velocity.x
-        this.position.y += this.velocity.y
-
-        if (this.position.y + this.height + this.velocity.y >= canvas.height) {
-            this.velocity.y = 0
-        } else this.velocity.y += gravity
-    }
-
-    attack() {
-        this.isAttacking = true
-        setTimeout(() => {
-            this.isAttacking = false
-        }, 100);
-    }
-}
-
-const player = new Sprite({
+const player = new Fighter({
     position: {
         x: 0,
         y: 0
@@ -72,10 +28,43 @@ const player = new Sprite({
     offset: {
         x: 0,
         y: 0
+    },
+    imageSrc: './img/carmilla/Idle.png',
+    framesMax: 5,
+    scale: 1.5,
+    offset: {
+        x: 50,
+        y: 40
+    },
+    sprites: {
+        idle: {
+            imageSrc: './img/carmilla/Idle.png',
+            framesMax: 5
+        },
+        run: {
+            imageSrc: './img/carmilla/Walk.png',
+            framesMax: 6
+        },
+        jump: {
+            imageSrc: './img/carmilla/Jump.png',
+            framesMax: 6
+        },
+        attack: {
+            imageSrc: './img/carmilla/Attack.png',
+            framesMax: 6
+        },
+        attackBox: {
+            offset: {
+                x: 0,
+                y: 0
+            },
+            width: 100,
+            height: 50
+        }
     }
 })
 
-const enemy = new Sprite({
+const enemy = new Fighter({
     position: {
         x: 400,
         y: 100
@@ -88,8 +77,40 @@ const enemy = new Sprite({
     offset: {
         x: -50,
         y: 0
-    }
-})
+    },
+    imageSrc: './img/dracula/Idle.png',
+    framesMax: 5,
+    scale: 1.5,
+    offset: {
+        x: 50,
+        y: 40
+    },
+    sprites: {
+        idle: {
+            imageSrc: './img/dracula/Idle.png',
+            framesMax: 5
+        },
+        run: {
+            imageSrc: './img/dracula/Walk.png',
+            framesMax: 8
+        },
+        jump: {
+            imageSrc: './img/dracula/Jump.png',
+            framesMax: 7
+        },
+        attack: {
+            imageSrc: './img/dracula/Attack.png',
+            framesMax: 5
+        },
+        attackBox: {
+            offset: {
+                x: 0,
+                y: 0
+            },
+            width: 100,
+            height: 50
+        }
+}})
 
 console.log(player)
 
@@ -114,47 +135,13 @@ const keys = {
     }
 }
 
-function rectangularCollision({rectangle1,rectangle2}) {
-    return (
-        rectangle1.attackBox.position.x + rectangle1.attackBox.width >= rectangle2.position.x
-        && rectangle1.attackBox.position.x <= rectangle2.position.x + rectangle2.width
-        && rectangle1.attackBox.position.y + rectangle1.attackBox.height >= rectangle2.position.y
-        && rectangle1.attackBox.position.y <= rectangle2.position.y + rectangle2.height
-    )
-}
-
-function determineWinner({player, enemy, timerId}) {
-    clearTimeout(timerId)
-    document.querySelector('#displayText').style.display = 'flex'
-    if (player.health === enemy.health){
-        document.querySelector('#displayText').innerHTML = 'Tie'
-    } else if (player.health > enemy.health) {
-        document.querySelector('#displayText').innerHTML = 'Player 1 Wins'
-    } else if (enemy.health > player.health) {
-        document.querySelector('#displayText').innerHTML = 'Player 2 Wins'
-    }
-}
-
-let timer = 60
-let timerId
-function decreaseTimer() {
-    if (timer > 0) {
-        timerId = setTimeout(decreaseTimer, 1000)
-        timer--
-        document.querySelector('#timer').innerHTML = timer
-    }
-
-    if (timer === 0 ) {
-        determineWinner({player, enemy, timerId})
-    } 
-}
-
 decreaseTimer()
 
 function animate() {
     window.requestAnimationFrame(animate)
     c.fillStyle = 'black'
     c.fillRect(0, 0, canvas.width, canvas.height)
+    background.update()
     player.update()
     enemy.update()
 
@@ -164,15 +151,27 @@ function animate() {
     //player movement
     if (keys.a.pressed && player.lastKey === 'a') {
         player.velocity.x = -3
+        player.switchSprite('run')
     } else if (keys.d.pressed && player.lastKey === 'd') {
+        player.switchSprite('run')
         player.velocity.x = 3
+    } else { player.switchSprite('idle') }
+
+    if (player.velocity.y < 0) {
+        player.switchSprite('jump')
     }
 
     // enemy movement
     if (keys.ArrowLeft.pressed && enemy.lastKey === 'ArrowLeft') {
         enemy.velocity.x = -3
+        enemy.switchSprite('run')
     } else if (keys.ArrowRight.pressed && enemy.lastKey === 'ArrowRight') {
         enemy.velocity.x = 3
+        enemy.switchSprite('run')
+    } else { enemy.switchSprite('idle') }
+
+    if (enemy.velocity.y < 0) {
+        enemy.switchSprite('jump')
     }
 
     // detect collision 
@@ -225,7 +224,7 @@ window.addEventListener('keydown', (event) => {
             enemy.velocity.y = -15
         break
         case 'ArrowDown':
-            enemy.isAttacking = true
+            enemy.attack()
     }
 })
 
